@@ -1,0 +1,39 @@
+# Composer vendor directory
+/vendor/
+
+# PHPUnit cache
+.phpunit.result.cache
+
+# IDE / Editor
+.idea/
+.vscode/
+*.iml
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.cache
+
+# PHPUnit coverage
+coverage/
+clover.xml
+
+# Testbench Laravel app (if generated)
+testbench.yaml
+testbench.sqlite
+
+# Composer artifacts
+composer.lock
+
+# Node modules (if user adds assets later)
+node_modules/
+
+# Misc
+.env
+.env.*

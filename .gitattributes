@@ -1,0 +1,18 @@
+# Ignore these files when exporting the package (e.g., composer install)
+# --------------------------------------------------------------
+
+/tests           export-ignore
+/.github         export-ignore
+/.gitignore      export-ignore
+/.phpunit.result.cache export-ignore
+/phpunit.xml     export-ignore
+/README.md       export-ignore
+/.editorconfig   export-ignore
+/.vscode         export-ignore
+
+# Ensure correct line endings and text handling
+# --------------------------------------------------------------
+* text=auto
+
+# Mark important files as linguistically relevant
+src/* linguist-detectable=true

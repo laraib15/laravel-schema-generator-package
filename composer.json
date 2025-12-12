@@ -1,0 +1,65 @@
+{
+  "name": "laraib15/laravel-schema-generator",
+  "description": "Generate Laravel migrations from a schema DSL (create, add, modify, drop columns with DB diffing).",
+  "type": "library",
+  "license": "MIT",
+
+  "keywords": [
+    "laravel",
+    "migration generator",
+    "crud generator",
+    "schema dsl",
+    "dbal",
+    "schema generator",
+    "mysql",
+    "postgres"
+  ],
+
+  "authors": [
+    {
+      "name": "Laraib",
+      "email": "laraib15tahir@gmail.com"
+    }
+  ],
+
+  "autoload": {
+    "psr-4": {
+      "Laraib15\\SchemaGenerator\\": "src/"
+    }
+  },
+
+  "autoload-dev": {
+    "psr-4": {
+      "Tests\\": "tests/"
+    }
+  },
+
+  "require": {
+    "php": "^8.1",
+    "illuminate/support": "^10.0|^11.0",
+    "illuminate/database": "^10.0|^11.0",
+    "illuminate/console": "^10.0|^11.0",
+    "doctrine/dbal": "^3.0"
+  },
+
+  "require-dev": {
+    "orchestra/testbench": "^8.0|^9.0",
+    "phpunit/phpunit": "^10.0"
+  },
+
+  "extra": {
+    "laravel": {
+      "providers": [
+        "Laraib15\\SchemaGenerator\\SchemaGeneratorServiceProvider"
+      ]
+    }
+  },
+
+  "minimum-stability": "stable",
+  "prefer-stable": true,
+
+  "support": {
+    "issues": "https://github.com/laraib15/laravel-schema-generator/issues",
+    "source": "https://github.com/laraib15/laravel-schema-generator"
+  }
+}
