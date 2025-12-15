@@ -15,11 +15,11 @@ The generator compares your **DSL schema** against the **actual database schema*
 
 ## Requirements
 
-| Component | Version |
-|----------|---------|
-| PHP      | 8.1+    |
-| Laravel  | 10 or 11 |
-| Doctrine DBAL | Required for modify-column support |
+| Component | Supported Versions |
+|----------|--------------------|
+| PHP      | 8.1+               |
+| Laravel  | 9, 10, 11, 12      |
+| Doctrine DBAL | Optional — Required only for modify-column support |
 | Database | MySQL recommended for modify operations |
 
 > SQLite does not support `->change()`. Modify-column migrations should be executed on MySQL/PostgreSQL.
@@ -38,6 +38,12 @@ The generator command becomes available:
 
 ```bash
 php artisan generate:crud
+```
+
+If you want modify-column (`->change()`) support, install DBAL in your Laravel app:
+
+```bash
+composer require doctrine/dbal
 ```
 
 ---
@@ -188,7 +194,7 @@ Contains:
 $table->text('status')->change();
 ```
 
-> Modify operations require MySQL/PostgreSQL.
+> Modify operations require MySQL/PostgreSQL and Doctrine DBAL.
 
 ---
 
@@ -214,7 +220,7 @@ The generator compares:
 < DSL schema >   <-->   < DB schema >
 ```
 
-Rules:
+Then decides:
 
 | Condition | Output |
 |----------|--------|
@@ -236,9 +242,18 @@ vendor/bin/phpunit
 
 ## MySQL Integration Tests
 
+Enable MySQL tests:
+
 ```bash
 CRUD_MYSQL_TEST_ENABLED=true vendor/bin/phpunit --group=mysql
 ```
+
+Tests cover:
+
+- Modify-column detection  
+- Doctrine DBAL introspection  
+- Foreign key dropping  
+- Combined modify + add sequences  
 
 ---
 

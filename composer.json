@@ -9,15 +9,15 @@
     "migration generator",
     "crud generator",
     "schema dsl",
-    "dbal",
     "schema generator",
+    "migration diff",
     "mysql",
     "postgres"
   ],
 
   "authors": [
     {
-      "name": "Laraib",
+      "name": "Laraib Tahir",
       "email": "laraib15tahir@gmail.com"
     }
   ],
@@ -36,15 +36,18 @@
 
   "require": {
     "php": "^8.1",
-    "illuminate/support": "^10.0|^11.0",
-    "illuminate/database": "^10.0|^11.0",
-    "illuminate/console": "^10.0|^11.0",
-    "doctrine/dbal": "^3.0"
+    "illuminate/support": "^9.0|^10.0|^11.0|^12.0",
+    "illuminate/database": "^9.0|^10.0|^11.0|^12.0",
+    "illuminate/console": "^9.0|^10.0|^11.0|^12.0"
+  },
+
+  "suggest": {
+    "doctrine/dbal": "Required for modify-column support (schema diffing & ->change()). Install via: composer require doctrine/dbal"
   },
 
   "require-dev": {
-    "orchestra/testbench": "^8.0|^9.0",
-    "phpunit/phpunit": "^10.0"
+    "orchestra/testbench": "^7.0|^8.0|^9.0",
+    "phpunit/phpunit": "^9.5|^10.0"
   },
 
   "extra": {

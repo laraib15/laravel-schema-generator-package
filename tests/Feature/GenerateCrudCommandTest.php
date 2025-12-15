@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -59,7 +58,7 @@ class GenerateCrudCommandTest extends TestCase
         $output = Artisan::output();
 
         // Track only when command "succeeds" (exitCode 0)
-        if ($exitCode === 0 && !empty($newFiles)) {
+        if ($exitCode === 0 && ! empty($newFiles)) {
             $this->generatedMigrationFiles = array_values(array_unique(
                 array_merge($this->generatedMigrationFiles, $newFiles)
             ));
