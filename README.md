@@ -48,6 +48,47 @@ composer require doctrine/dbal
 
 ---
 
+## Important Notes About Modify-Column Support
+
+Modify-column detection relies on Doctrine DBAL to inspect the **actual database schema**.  
+Because of this:
+
+### 1. Migrations must be executed before DBAL can detect column types
+If a migration has **not yet been run**, the table or column will not exist in the database.
+
+In that case, the generator cannot detect the existing column type and will treat it as a **new column**, producing:
+
+```
+xxxx_add_columns_to_table.php
+```
+
+instead of:
+
+```
+xxxx_modify_columns_in_table.php
+```
+
+### 2. Modify operations require:
+- Doctrine DBAL installed  
+- The table/column already existing in the database  
+
+Example:
+
+```bash
+php artisan generate:crud "orders:id:uuid:primary,name:string"
+php artisan migrate
+
+php artisan generate:crud "orders:name:text"
+```
+
+If you skip `php artisan migrate`, DBAL cannot detect existing columns.
+
+### 3. SQLite cannot run modify migrations  
+Even with DBAL installed, SQLite does not support `->change()`.  
+Use MySQL/PostgreSQL for production modify support.
+
+---
+
 # Schema DSL Overview
 
 The DSL (Domain-Specific Language) format looks like this:
@@ -193,8 +234,6 @@ Contains:
 ```php
 $table->text('status')->change();
 ```
-
-> Modify operations require MySQL/PostgreSQL and Doctrine DBAL.
 
 ---
 
