@@ -34,17 +34,17 @@ class GenerateCrudCommandModifyMySqlTest extends TestCase
         config([
             'database.default' => 'mysql',
             'database.connections.mysql' => [
-                'driver'    => 'mysql',
-                'host'      => env('CRUD_MYSQL_HOST', '127.0.0.1'),
-                'port'      => env('CRUD_MYSQL_PORT', '3306'),
-                'database'  => env('CRUD_MYSQL_DATABASE', 'crud_testing'),
-                'username'  => env('CRUD_MYSQL_USERNAME', 'root'),
-                'password'  => env('CRUD_MYSQL_PASSWORD', ''),
-                'charset'   => 'utf8mb4',
+                'driver' => 'mysql',
+                'host' => env('CRUD_MYSQL_HOST', '127.0.0.1'),
+                'port' => env('CRUD_MYSQL_PORT', '3306'),
+                'database' => env('CRUD_MYSQL_DATABASE', 'crud_testing'),
+                'username' => env('CRUD_MYSQL_USERNAME', 'root'),
+                'password' => env('CRUD_MYSQL_PASSWORD', ''),
+                'charset' => 'utf8mb4',
                 'collation' => 'utf8mb4_unicode_ci',
-                'prefix'    => '',
-                'strict'    => true,
-                'engine'    => null,
+                'prefix' => '',
+                'strict' => true,
+                'engine' => null,
             ],
         ]);
 
@@ -96,9 +96,9 @@ class GenerateCrudCommandModifyMySqlTest extends TestCase
 
         clearstatcache();
 
-        $after    = $this->getMigrationFiles();
+        $after = $this->getMigrationFiles();
         $newFiles = array_values(array_diff($after, $before));
-        $output   = Artisan::output();
+        $output = Artisan::output();
 
         if ($exitCode === 0 && ! empty($newFiles)) {
             $this->generatedMigrationFiles = array_values(array_unique(
@@ -128,7 +128,7 @@ class GenerateCrudCommandModifyMySqlTest extends TestCase
         $tableName = uniqid('test_');
 
         // 1. create table on MySQL
-        $initialSchema   = "$tableName:id:uuid:primary,name:string";
+        $initialSchema = "$tableName:id:uuid:primary,name:string";
         $createMigration = $this->generateMigrationForSchema($initialSchema);
         $this->assertFileExists($createMigration);
 
@@ -139,7 +139,7 @@ class GenerateCrudCommandModifyMySqlTest extends TestCase
         $this->assertTrue(Schema::hasTable($tableName));
 
         // 2. modify 'name' from string -> text
-        $updatedSchema   = "$tableName:name:text";
+        $updatedSchema = "$tableName:name:text";
         $modifyMigration = $this->generateMigrationForSchema($updatedSchema);
         $this->assertFileExists($modifyMigration);
 
@@ -158,7 +158,7 @@ class GenerateCrudCommandModifyMySqlTest extends TestCase
         $tableName = uniqid('test_');
 
         // 1. Create table on MySQL
-        $initialSchema   = "$tableName:id:uuid:primary,name:string";
+        $initialSchema = "$tableName:id:uuid:primary,name:string";
         $createMigration = $this->generateMigrationForSchema($initialSchema);
         $this->assertFileExists($createMigration);
 
@@ -181,7 +181,7 @@ class GenerateCrudCommandModifyMySqlTest extends TestCase
 
         clearstatcache();
 
-        $after    = $this->getMigrationFiles();
+        $after = $this->getMigrationFiles();
         $newFiles = array_values(array_diff($after, $before));
 
         // We expect 2 migrations: one "modify" and one "add columns"
@@ -198,7 +198,7 @@ class GenerateCrudCommandModifyMySqlTest extends TestCase
         ));
 
         $modifyMigrationPath = null;
-        $addColumnsPath      = null;
+        $addColumnsPath = null;
 
         // 3. Inspect contents of the new migrations
         foreach ($newFiles as $file) {
@@ -238,7 +238,7 @@ class GenerateCrudCommandModifyMySqlTest extends TestCase
     public function it_does_not_generate_migration_when_schema_matches_database()
     {
         $tableName = uniqid('test_');
-        $schema    = "$tableName:id:uuid:primary,name:string";
+        $schema = "$tableName:id:uuid:primary,name:string";
 
         // 1. First run: create migration + run it
         $createMigration = $this->generateMigrationForSchema($schema);
@@ -261,7 +261,7 @@ class GenerateCrudCommandModifyMySqlTest extends TestCase
 
         // recompute newFiles relative to our own "before"
         clearstatcache();
-        $after    = $this->getMigrationFiles();
+        $after = $this->getMigrationFiles();
         $newFiles = array_values(array_diff($after, $before));
 
         $this->assertEmpty(
@@ -275,64 +275,63 @@ class GenerateCrudCommandModifyMySqlTest extends TestCase
         );
     }
 
-   #[Test]
-public function it_drops_foreignId_columns_and_restores_them_in_down()
-{
-    $tableName = uniqid('test_');
+    #[Test]
+    public function it_drops_foreign_id_columns_and_restores_them_in_down()
+    {
+        $tableName = uniqid('test_');
 
-    // 0. Create the referenced `users` table so the FK can be created
-    Schema::create('users', function (\Illuminate\Database\Schema\Blueprint $table) {
-        $table->id(); // big integer primary key, matches default foreignId() reference
-    });
+        // 0. Create the referenced `users` table so the FK can be created
+        Schema::create('users', function (\Illuminate\Database\Schema\Blueprint $table) {
+            $table->id(); // big integer primary key, matches default foreignId() reference
+        });
 
-    $this->assertTrue(
-        Schema::hasTable('users'),
-        "Expected 'users' table to exist before creating foreign key to it."
-    );
+        $this->assertTrue(
+            Schema::hasTable('users'),
+            "Expected 'users' table to exist before creating foreign key to it."
+        );
 
-    // 1. Create table with a foreignId
-    $initialSchema   = "$tableName:id:uuid:primary,user_id:foreignId:constrained=users:onDelete=cascade";
-    $createMigration = $this->generateMigrationForSchema($initialSchema);
-    $this->assertFileExists($createMigration);
+        // 1. Create table with a foreignId
+        $initialSchema = "$tableName:id:uuid:primary,user_id:foreignId:constrained=users:onDelete=cascade";
+        $createMigration = $this->generateMigrationForSchema($initialSchema);
+        $this->assertFileExists($createMigration);
 
-    $createInstance = include $createMigration;
-    $createInstance->up();
+        $createInstance = include $createMigration;
+        $createInstance->up();
 
-    $this->assertTrue(Schema::hasTable($tableName));
-    $this->assertTrue(Schema::hasColumn($tableName, 'user_id'));
+        $this->assertTrue(Schema::hasTable($tableName));
+        $this->assertTrue(Schema::hasColumn($tableName, 'user_id'));
 
-    // 2. Request dropping `user_id` via :drop flag
-    $dropSchema = "$tableName:user_id:foreignId:drop";
+        // 2. Request dropping `user_id` via :drop flag
+        $dropSchema = "$tableName:user_id:foreignId:drop";
 
-    $dropMigrationPath = $this->generateMigrationForSchema($dropSchema);
-    $this->assertFileExists($dropMigrationPath);
+        $dropMigrationPath = $this->generateMigrationForSchema($dropSchema);
+        $this->assertFileExists($dropMigrationPath);
 
-    $dropContent = file_get_contents($dropMigrationPath);
+        $dropContent = file_get_contents($dropMigrationPath);
 
-    // up() should drop FK then column
-    $this->assertStringContainsString("Schema::table('$tableName'", $dropContent);
-    $this->assertStringContainsString("\$table->dropForeign(['user_id'])", $dropContent);
-    $this->assertStringContainsString("\$table->dropColumn('user_id')", $dropContent);
+        // up() should drop FK then column
+        $this->assertStringContainsString("Schema::table('$tableName'", $dropContent);
+        $this->assertStringContainsString("\$table->dropForeign(['user_id'])", $dropContent);
+        $this->assertStringContainsString("\$table->dropColumn('user_id')", $dropContent);
 
-    // down() should re-create the foreignId with constraints
-    $this->assertStringContainsString("\$table->foreignId('user_id')", $dropContent);
+        // down() should re-create the foreignId with constraints
+        $this->assertStringContainsString("\$table->foreignId('user_id')", $dropContent);
 
-    // 3. Run drop migration to ensure it is valid
-    $dropInstance = include $dropMigrationPath;
-    $dropInstance->up();
+        // 3. Run drop migration to ensure it is valid
+        $dropInstance = include $dropMigrationPath;
+        $dropInstance->up();
 
-    $this->assertFalse(
-        Schema::hasColumn($tableName, 'user_id'),
-        "Expected 'user_id' to be dropped after drop-columns migration."
-    );
+        $this->assertFalse(
+            Schema::hasColumn($tableName, 'user_id'),
+            "Expected 'user_id' to be dropped after drop-columns migration."
+        );
 
-    // 4. Run down() and ensure the column is back
-    $dropInstance->down();
+        // 4. Run down() and ensure the column is back
+        $dropInstance->down();
 
-    $this->assertTrue(
-        Schema::hasColumn($tableName, 'user_id'),
-        "Expected 'user_id' to be restored after down() of drop-columns migration."
-    );
-}
-
+        $this->assertTrue(
+            Schema::hasColumn($tableName, 'user_id'),
+            "Expected 'user_id' to be restored after down() of drop-columns migration."
+        );
+    }
 }

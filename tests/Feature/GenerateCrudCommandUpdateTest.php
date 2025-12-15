@@ -3,9 +3,7 @@
 namespace Tests\Feature;
 
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Schema;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -39,7 +37,7 @@ class GenerateCrudCommandUpdateTest extends TestCase
 
         clearstatcache();
 
-        $after    = $this->getMigrationFiles();
+        $after = $this->getMigrationFiles();
         $newFiles = array_values(array_diff($after, $before));
 
         $this->assertNotEmpty($newFiles, 'No migration file was generated for schema: '.$schema);
@@ -54,8 +52,8 @@ class GenerateCrudCommandUpdateTest extends TestCase
     #[Test]
     public function it_creates_table_with_initial_columns()
     {
-        $tableName     = uniqid('test_');
-        $schema        = "$tableName:id:uuid:primary,name:string,email:string:unique";
+        $tableName = uniqid('test_');
+        $schema = "$tableName:id:uuid:primary,name:string,email:string:unique";
         $migrationFile = $this->generateMigrationForSchema($schema);
 
         $this->assertFileExists($migrationFile);
@@ -72,7 +70,7 @@ class GenerateCrudCommandUpdateTest extends TestCase
     {
         $tableName = uniqid('test_');
 
-        $initialSchema      = "$tableName:id:uuid:primary,name:string";
+        $initialSchema = "$tableName:id:uuid:primary,name:string";
         $createMigrationFile = $this->generateMigrationForSchema($initialSchema);
         $this->assertFileExists($createMigrationFile);
 
@@ -86,7 +84,7 @@ class GenerateCrudCommandUpdateTest extends TestCase
         $this->assertStringContainsString("\$table->string('name')", $createMigrationContent);
 
         // Now add new column
-        $updatedSchema         = "$tableName:email:string:unique";
+        $updatedSchema = "$tableName:email:string:unique";
         $addColumnMigrationFile = $this->generateMigrationForSchema($updatedSchema);
         $this->assertFileExists($addColumnMigrationFile);
 
@@ -100,7 +98,7 @@ class GenerateCrudCommandUpdateTest extends TestCase
     {
         $tableName = uniqid('test_');
 
-        $initialSchema   = "$tableName:id:uuid:primary,name:string,email:string";
+        $initialSchema = "$tableName:id:uuid:primary,name:string,email:string";
         $createMigration = $this->generateMigrationForSchema($initialSchema);
         $this->assertFileExists($createMigration);
 
@@ -108,7 +106,7 @@ class GenerateCrudCommandUpdateTest extends TestCase
         $migrationInstance = include $createMigration;
         $migrationInstance->up();
 
-        $dropSchema    = "$tableName:email:string:drop";
+        $dropSchema = "$tableName:email:string:drop";
         $dropMigration = $this->generateMigrationForSchema($dropSchema);
 
         $this->assertFileExists($dropMigration);

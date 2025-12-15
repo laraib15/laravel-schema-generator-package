@@ -17,6 +17,7 @@ use Throwable;
 class GenerateCrudFromSchema extends Command
 {
     protected $signature = 'generate:crud {schema}';
+
     protected $description = 'Generate migration from schema string with relations, indexes, and soft deletes support';
 
     /**
@@ -49,7 +50,7 @@ class GenerateCrudFromSchema extends Command
         $tokens = explode(',', $schema);
 
         $compositeIndexTokens = [];
-        $columnTokens         = [];
+        $columnTokens = [];
 
         foreach ($tokens as $token) {
             // Identify composite index tokens like 'unique:user_id|ordered_at' or 'index:col1|col2'
@@ -61,16 +62,17 @@ class GenerateCrudFromSchema extends Command
         }
 
         // Parse columns and flags from non-index tokens
-        $parsed  = $this->parseSchemaInput(implode(',', $columnTokens));
-        $table   = $parsed['table'];
+        $parsed = $this->parseSchemaInput(implode(',', $columnTokens));
+        $table = $parsed['table'];
         $columns = $parsed['columns'];
-        $flags   = $parsed['flags'] ?? [];
+        $flags = $parsed['flags'] ?? [];
 
         // Parse composite indexes separately from the tokens
         $compositeIndexes = $this->parseCompositeIndexesFromTokens($compositeIndexTokens);
 
         if (! $this->validateColumnTypes($columns)) {
             $this->error('Migration aborted due to invalid column types.');
+
             return 1;
         }
 
@@ -80,6 +82,7 @@ class GenerateCrudFromSchema extends Command
                 // For alter/modify, Doctrine DBAL is required to inspect existing columns
                 if (! class_exists(DriverManager::class)) {
                     $this->error('Doctrine DBAL is required to inspect existing columns. Run: composer require doctrine/dbal');
+
                     return 1;
                 }
 
@@ -87,9 +90,9 @@ class GenerateCrudFromSchema extends Command
                     ? Schema::getColumnListing($table)
                     : [];
 
-                $newColumns      = [];
+                $newColumns = [];
                 $columnsToModify = [];
-                $columnsToDrop   = [];
+                $columnsToDrop = [];
 
                 foreach ($columns as $name => $col) {
                     if (in_array($name, ['id', 'created_at', 'updated_at'], true)) {
@@ -104,32 +107,31 @@ class GenerateCrudFromSchema extends Command
                         } else {
                             $this->warn("Column '{$name}' was marked to be dropped but does not exist in table '{$table}'.");
                         }
+
                         continue;
                     }
 
                     if (! in_array($name, $existingColumns, true)) {
                         $newColumns[$name] = $col;
                         $this->info("Column '{$name}' does not exist, will be added.");
+
                         continue;
                     }
 
                     // Column exists - check differences using Doctrine DBAL
                     $existingColumn = $this->getExistingColumn($table, $name);
                     if ($existingColumn) {
-                        $typeObj      = $existingColumn->getType();
-                        $dbTypeClass  = get_class($typeObj); // e.g. 'Doctrine\DBAL\Types\TextType'
-                        $dbNullable   = ! $existingColumn->getNotnull();
+                        $typeObj = $existingColumn->getType();
+                        $dbTypeClass = get_class($typeObj); // e.g. 'Doctrine\DBAL\Types\TextType'
+                        $dbNullable = ! $existingColumn->getNotnull();
 
                         // Normalize types for comparison
-                        $this->info("DB type for '{$name}': {$dbTypeClass}");
                         $dbType = $this->normalizeTypeForComparison($dbTypeClass);
 
-                        $requestedType     = $this->normalizeTypeForComparison($col['type'], $dbType);
+                        $requestedType = $this->normalizeTypeForComparison($col['type'], $dbType);
                         $requestedNullable = ! empty($col['options']['nullable']);
 
-                        $this->info("DB nullable for '{$name}': " . ($dbNullable ? 'true' : 'false'));
-                        $this->info("Requested nullable for '{$name}': " . ($requestedNullable ? 'true' : 'false'));
-
+                        
                         $foreignIdMatch = (
                             ($dbType === 'biginttype' || $dbType === 'bigint')
                             && strtolower($requestedType) === 'foreignid'
@@ -138,8 +140,8 @@ class GenerateCrudFromSchema extends Command
                         if (! $foreignIdMatch && ($dbType !== $requestedType || $dbNullable !== $requestedNullable)) {
                             $columnsToModify[$name] = $col;
                             $this->warn(
-                                "Column '{$name}' differs (DB: type={$dbType}, nullable=" . ($dbNullable ? 'true' : 'false') .
-                                "; Requested: type={$requestedType}, nullable=" . ($requestedNullable ? 'true' : 'false') . '), will be modified.'
+                                "Column '{$name}' differs (DB: type={$dbType}, nullable=".($dbNullable ? 'true' : 'false').
+                                "; Requested: type={$requestedType}, nullable=".($requestedNullable ? 'true' : 'false').'), will be modified.'
                             );
                         } else {
                             $this->info("Column '{$name}' matches DB schema, no modification needed.");
@@ -165,6 +167,7 @@ class GenerateCrudFromSchema extends Command
                 }
 
                 $this->info('Migration generation completed successfully.');
+
                 return 0;
             }
 
@@ -183,7 +186,7 @@ class GenerateCrudFromSchema extends Command
             // Generate create-table migration
             $this->generateMigration($table, $columns, $flags, $compositeIndexes);
         } catch (Throwable $e) {
-            $this->error('Error generating migration: ' . $e->getMessage());
+            $this->error('Error generating migration: '.$e->getMessage());
 
             // Clean up any created migration files if an error occurs
             foreach ($this->createdMigrationFiles as $path) {
@@ -197,6 +200,7 @@ class GenerateCrudFromSchema extends Command
         }
 
         $this->info('Migration generation completed successfully.');
+
         return 0;
     }
 
@@ -216,12 +220,12 @@ class GenerateCrudFromSchema extends Command
         $indexes = [];
         foreach ($tokens as $token) {
             if (preg_match('/^(unique|index):([\w|]+)$/', $token, $matches)) {
-                $type    = $matches[1];
+                $type = $matches[1];
                 $columns = explode('|', $matches[2]);
                 $indexes[] = [
-                    'type'    => $type,
+                    'type' => $type,
                     'columns' => $columns,
-                    'name'    => null,
+                    'name' => null,
                 ];
             }
         }
@@ -261,7 +265,8 @@ class GenerateCrudFromSchema extends Command
                 if (! empty($opts['onDelete'])) {
                     $line .= "->onDelete('{$opts['onDelete']}')";
                 }
-                $code .= $line . ";\n            ";
+                $code .= $line.";\n            ";
+
                 continue;
             }
 
@@ -274,7 +279,7 @@ class GenerateCrudFromSchema extends Command
                 $line .= '->unique()';
             }
 
-            $code .= $line . ";\n            ";
+            $code .= $line.";\n            ";
         }
 
         return $code;
@@ -282,28 +287,28 @@ class GenerateCrudFromSchema extends Command
 
     protected function normalizeTypeForComparison(string $type, ?string $dbColumnType = null): string
     {
-        $this->info("Normalizing type for comparison: {$type}  DB column type: " . ($dbColumnType ?? 'null'));
+        $this->info("Normalizing type for comparison: {$type}  DB column type: ".($dbColumnType ?? 'null'));
 
         if (str_contains($type, '\\')) {
             $type = strtolower(substr($type, strrpos($type, '\\') + 1));
         }
 
         $map = [
-            'biginttype'        => 'bigint',
+            'biginttype' => 'bigint',
             'bigincrementstype' => 'bigint',
-            'bigintegertype'    => 'bigint',
-            'enumtype'          => 'enum',
-            'incrementstype'    => 'integer',
-            'integertype'       => 'integer',
-            'stringtype'        => 'string',
-            'texttype'          => 'text',
-            'booleantype'       => 'boolean',
-            'datetimetype'      => 'datetime',
-            'datetype'          => 'date',
-            'timestamptype'     => 'timestamp',
-            'floattype'         => 'float',
-            'decimaltype'       => 'decimal',
-            'jsontype'          => 'json',
+            'bigintegertype' => 'bigint',
+            'enumtype' => 'enum',
+            'incrementstype' => 'integer',
+            'integertype' => 'integer',
+            'stringtype' => 'string',
+            'texttype' => 'text',
+            'booleantype' => 'boolean',
+            'datetimetype' => 'datetime',
+            'datetype' => 'date',
+            'timestamptype' => 'timestamp',
+            'floattype' => 'float',
+            'decimaltype' => 'decimal',
+            'jsontype' => 'json',
         ];
 
         $normalized = $map[$type] ?? $type;
@@ -315,7 +320,7 @@ class GenerateCrudFromSchema extends Command
             $normalized = 'datetime';
         }
 
-        $this->info('Normalized type: ' . $normalized);
+        $this->info('Normalized type: '.$normalized);
 
         return $normalized;
     }
@@ -323,9 +328,9 @@ class GenerateCrudFromSchema extends Command
     protected function generateDropColumnsMigration(string $table, array $columnsToDrop): void
     {
         $timestamp = date('Y_m_d_His');
-        $file      = database_path("migrations/{$timestamp}_drop_columns_from_{$table}_table.php");
+        $file = database_path("migrations/{$timestamp}_drop_columns_from_{$table}_table.php");
 
-        $upLines   = [];
+        $upLines = [];
         $downLines = [];
 
         foreach ($columnsToDrop as $name => $col) {
@@ -344,7 +349,7 @@ class GenerateCrudFromSchema extends Command
             $downLines[] = $this->formatColumnLine($name, $type, $opts);
         }
 
-        $upCode   = implode("\n                    ", $upLines);
+        $upCode = implode("\n                    ", $upLines);
         $downCode = implode("\n                    ", $downLines);
 
         $stub = <<<PHP
@@ -379,11 +384,11 @@ class GenerateCrudFromSchema extends Command
 
     protected function parseSchemaInput(string $input): array
     {
-        $table   = null;
+        $table = null;
         $columns = [];
-        $flags   = [
+        $flags = [
             'softDeletes' => false,
-            'timestamps'  => false,
+            'timestamps' => false,
         ];
         $indexes = [];
 
@@ -402,10 +407,12 @@ class GenerateCrudFromSchema extends Command
             // Flags
             if (count($parts) === 0 && in_array($token, ['softDeletes', 'timestamps'], true)) {
                 $flags[$token] = true;
+
                 continue;
             }
             if (count($parts) === 1 && in_array($parts[0], ['softDeletes', 'timestamps'], true)) {
                 $flags[$parts[0]] = true;
+
                 continue;
             }
 
@@ -415,12 +422,13 @@ class GenerateCrudFromSchema extends Command
             // Indexes
             if (in_array($type, ['unique', 'index'], true)) {
                 $colsStr = $parts[2] ?? '';
-                $cols    = explode('|', $colsStr);
+                $cols = explode('|', $colsStr);
                 $indexes[] = [
-                    'name'    => $name,
-                    'type'    => $type,
+                    'name' => $name,
+                    'type' => $type,
                     'columns' => $cols,
                 ];
+
                 continue;
             }
 
@@ -429,8 +437,8 @@ class GenerateCrudFromSchema extends Command
 
             // Special: if string or char and next part is numeric, treat as length
             if (in_array($type, ['string', 'char'], true) && isset($parts[2]) && is_numeric($parts[2])) {
-                $options['length']   = (int) $parts[2];
-                $optionPartsStart    = 3; // options start after length
+                $options['length'] = (int) $parts[2];
+                $optionPartsStart = 3; // options start after length
             } else {
                 $optionPartsStart = 2; // options start here normally
             }
@@ -450,7 +458,7 @@ class GenerateCrudFromSchema extends Command
             }
 
             $columns[$name] = [
-                'type'    => $type,
+                'type' => $type,
                 'options' => $options,
             ];
         }
@@ -460,7 +468,7 @@ class GenerateCrudFromSchema extends Command
 
     protected function formatColumnLine(string $name, string $type, array $opts): string
     {
-        $line = "\$table";
+        $line = '$table';
 
         // Handle special case: foreignId
         if ($type === 'foreignId') {
@@ -480,7 +488,7 @@ class GenerateCrudFromSchema extends Command
             }
             if (! empty($opts['comment'])) {
                 $comment = addslashes($opts['comment']);
-                $line   .= "->comment('{$comment}')";
+                $line .= "->comment('{$comment}')";
             }
             $line .= ';';
 
@@ -489,21 +497,21 @@ class GenerateCrudFromSchema extends Command
 
         // Handle enum
         if ($type === 'enum' && ! empty($opts['values']) && is_array($opts['values'])) {
-            $vals = "['" . implode("','", $opts['values']) . "']";
+            $vals = "['".implode("','", $opts['values'])."']";
             $line .= "->enum('{$name}', {$vals})";
         }
         // Handle decimal (precision, scale)
         elseif ($type === 'decimal') {
             $precision = $opts['precision'] ?? 8;
-            $scale     = $opts['scale'] ?? 2;
-            $line     .= "->decimal('{$name}', {$precision}, {$scale})";
+            $scale = $opts['scale'] ?? 2;
+            $line .= "->decimal('{$name}', {$precision}, {$scale})";
         }
         // Handle uuid primary key
         elseif ($type === 'uuid' && ! empty($opts['primary'])) {
             $line .= "->uuid('{$name}')->primary()";
             if (! empty($opts['comment'])) {
                 $comment = addslashes($opts['comment']);
-                $line   .= "->comment('{$comment}')";
+                $line .= "->comment('{$comment}')";
             }
             $line .= ';';
 
@@ -559,7 +567,7 @@ class GenerateCrudFromSchema extends Command
         }
         if (! empty($opts['comment'])) {
             $comment = addslashes($opts['comment']); // Escape quotes if any
-            $line   .= "->comment('{$comment}')";
+            $line .= "->comment('{$comment}')";
         }
 
         $line .= ';';
@@ -569,7 +577,7 @@ class GenerateCrudFromSchema extends Command
 
     protected function formatCompositeIndex(string $type, array $columns, ?string $indexName = null): string
     {
-        $cols          = implode("', '", $columns);
+        $cols = implode("', '", $columns);
         $indexNamePart = $indexName ? ", '{$indexName}'" : '';
 
         if ($type === 'unique') {
@@ -585,31 +593,31 @@ class GenerateCrudFromSchema extends Command
     protected function generateModifyMigration(string $table, array $columnsToModify): void
     {
         $timestamp = date('Y_m_d_His');
-        $file      = database_path("migrations/{$timestamp}_modify_columns_in_{$table}_table.php");
+        $file = database_path("migrations/{$timestamp}_modify_columns_in_{$table}_table.php");
 
-        $fieldsCode   = '';
+        $fieldsCode = '';
         $rollbackCode = '';
 
         foreach ($columnsToModify as $name => $col) {
-            $type      = $col['type'];
-            $nullable  = ! empty($col['options']['nullable']) ? '->nullable()' : '';
+            $type = $col['type'];
+            $nullable = ! empty($col['options']['nullable']) ? '->nullable()' : '';
 
             // Get the existing column info to find old type & nullable status
             $existingColumn = $this->getExistingColumn($table, $name);
             if ($existingColumn) {
-                $oldTypeObj  = $existingColumn->getType();
-                $oldType     = $this->normalizeTypeForComparison(get_class($oldTypeObj), $type);
+                $oldTypeObj = $existingColumn->getType();
+                $oldType = $this->normalizeTypeForComparison(get_class($oldTypeObj), $type);
                 $oldNullable = ! $existingColumn->getNotnull() ? '->nullable()' : '';
             } else {
                 // fallback if no existing column info
-                $oldType     = 'string';
+                $oldType = 'string';
                 $oldNullable = '';
             }
 
-            $this->info("Preparing to modify column '{$name}' to type '{$type}'" . ($nullable ? ' with nullable' : ''));
+            $this->info("Preparing to modify column '{$name}' to type '{$type}'".($nullable ? ' with nullable' : ''));
 
             // up()
-            $fieldsCode   .= "\$table->{$type}('{$name}'){$nullable}->change();\n            ";
+            $fieldsCode .= "\$table->{$type}('{$name}'){$nullable}->change();\n            ";
             // down()
             $rollbackCode .= "\$table->{$oldType}('{$name}'){$oldNullable}->change();\n            ";
         }
@@ -657,6 +665,7 @@ class GenerateCrudFromSchema extends Command
 
         if (! $found && Schema::hasTable($table)) {
             $this->warn("Table '{$table}' exists but no create_{$table}_table migration was found. Treating as existing table.");
+
             return true;
         }
 
@@ -681,15 +690,15 @@ class GenerateCrudFromSchema extends Command
     protected function generateMigration(string $table, array $columns, array $flags, array $compositeIndexes = []): void
     {
         $timestamp = date('Y_m_d_His');
-        $filename  = database_path("migrations/{$timestamp}_create_{$table}_table.php");
+        $filename = database_path("migrations/{$timestamp}_create_{$table}_table.php");
         $this->registerCreatedMigration($filename);
 
         // Check if 'id' column exists and is customized (not default id type or has primary option)
         $hasCustomId = false;
         if (isset($columns['id'])) {
             $idCol = $columns['id'];
-            $type  = $idCol['type'];
-            $opts  = $idCol['options'] ?? [];
+            $type = $idCol['type'];
+            $opts = $idCol['options'] ?? [];
             if ($type !== 'id' || ! empty($opts['primary'])) {
                 $hasCustomId = true;
             }
@@ -711,12 +720,12 @@ class GenerateCrudFromSchema extends Command
             $type = $col['type'];
             $opts = $col['options'] ?? [];
 
-            $fieldsCode .= $this->formatColumnLine($name, $type, $opts) . "\n\t\t\t";
+            $fieldsCode .= $this->formatColumnLine($name, $type, $opts)."\n\t\t\t";
         }
 
         // Add composite indexes (multi-column indexes)
         foreach ($compositeIndexes as $index) {
-            $fieldsCode .= $this->formatCompositeIndex($index['type'], $index['columns'], $index['name'] ?? null) . "\n\t\t\t";
+            $fieldsCode .= $this->formatCompositeIndex($index['type'], $index['columns'], $index['name'] ?? null)."\n\t\t\t";
         }
 
         // Add softDeletes and timestamps if requested
@@ -758,18 +767,18 @@ class GenerateCrudFromSchema extends Command
     protected function generateAlterMigration(string $table, array $newColumns): void
     {
         $timestamp = date('Y_m_d_His');
-        $filename  = database_path("migrations/{$timestamp}_add_columns_to_{$table}_table.php");
+        $filename = database_path("migrations/{$timestamp}_add_columns_to_{$table}_table.php");
 
         $fieldsCode = '';
-        $downLines  = [];
+        $downLines = [];
 
         foreach ($newColumns as $name => $col) {
             $type = $col['type'];
             $opts = $col['options'] ?? [];
 
-            $line = rtrim($this->formatColumnLine($name, $type, $opts), ';') . ';';
+            $line = rtrim($this->formatColumnLine($name, $type, $opts), ';').';';
 
-            $fieldsCode .= $line . "\n\t\t\t";
+            $fieldsCode .= $line."\n\t\t\t";
 
             if ($type === 'foreignId') {
                 $downLines[] = "\$table->dropForeign(['{$name}']);";
@@ -816,6 +825,7 @@ class GenerateCrudFromSchema extends Command
             $type = $col['type'];
             if (! in_array($type, $this->allowedColumnTypes, true)) {
                 $this->error("Invalid column type '{$type}' for column '{$name}'.");
+
                 return false;
             }
         }
@@ -833,6 +843,7 @@ class GenerateCrudFromSchema extends Command
         // If Doctrine isn't installed, we can't introspect — fail gracefully
         if (! class_exists(DriverManager::class)) {
             $this->error('Doctrine DBAL is required to inspect existing columns. Run: composer require doctrine/dbal');
+
             return null;
         }
 
@@ -841,36 +852,36 @@ class GenerateCrudFromSchema extends Command
 
             if ($default === 'mysql') {
                 $connectionParams = [
-                    'dbname'   => config('database.connections.mysql.database'),
-                    'user'     => config('database.connections.mysql.username'),
+                    'dbname' => config('database.connections.mysql.database'),
+                    'user' => config('database.connections.mysql.username'),
                     'password' => config('database.connections.mysql.password'),
-                    'host'     => config('database.connections.mysql.host'),
-                    'driver'   => 'pdo_mysql',
-                    'port'     => config('database.connections.mysql.port'),
+                    'host' => config('database.connections.mysql.host'),
+                    'driver' => 'pdo_mysql',
+                    'port' => config('database.connections.mysql.port'),
                 ];
 
-                $config             = new Configuration();
+                $config = new Configuration;
                 $doctrineConnection = DriverManager::getConnection($connectionParams, $config);
             } else {
                 // Use the CURRENT Laravel connection (sqlite/pgsql/etc.)
                 $laravelConnection = DB::connection($default);
-                $pdo               = $laravelConnection->getPdo();
+                $pdo = $laravelConnection->getPdo();
 
                 $driverName = $pdo->getAttribute(\PDO::ATTR_DRIVER_NAME);
 
                 $doctrineDriver = match ($driverName) {
-                    'mysql'  => 'pdo_mysql',
+                    'mysql' => 'pdo_mysql',
                     'sqlite' => 'pdo_sqlite',
-                    'pgsql'  => 'pdo_pgsql',
-                    default  => throw new \RuntimeException("Unsupported PDO driver: {$driverName}"),
+                    'pgsql' => 'pdo_pgsql',
+                    default => throw new \RuntimeException("Unsupported PDO driver: {$driverName}"),
                 };
 
                 $connectionParams = [
-                    'pdo'    => $pdo,
+                    'pdo' => $pdo,
                     'driver' => $doctrineDriver,
                 ];
 
-                $config             = new Configuration();
+                $config = new Configuration;
                 $doctrineConnection = DriverManager::getConnection($connectionParams, $config);
             }
 
@@ -886,7 +897,7 @@ class GenerateCrudFromSchema extends Command
                 return $doctrineTable->getColumn($column);
             }
         } catch (Throwable $e) {
-            $this->error('Exception inspecting column: ' . $e->getMessage());
+            $this->error('Exception inspecting column: '.$e->getMessage());
         }
 
         return null;
